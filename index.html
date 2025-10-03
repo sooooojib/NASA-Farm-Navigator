@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NASA Farm Navigator - Advanced Agricultural Education Platform</title>
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/three@0.157.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.157.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://unpkg.com/gsap@3.12.2/dist/gsap.min.js"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-content">
+            <div class="loading-logo">🛰️</div>
+            <h2>NASA Farm Navigator</h2>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <p>Loading satellite data and 3D globe...</p>
+        </div>
+    </div>
+
+    <!-- Welcome Screen -->
+    <div id="welcomeScreen" class="screen hidden">
+        <div class="welcome-container">
+            <div class="welcome-hero">
+                <div class="hero-character">
+                    <div class="nasa-logo-large">
+                        <svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="100" cy="100" r="90" fill="#0B3D91"/>
+                            <ellipse cx="100" cy="100" rx="70" ry="25" fill="#FC3D21" transform="rotate(-15 100 100)"/>
+                            <circle cx="140" cy="60" r="8" fill="white"/>
+                            <path d="M 30 100 Q 100 70 170 100" stroke="white" stroke-width="3" fill="none"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="hero-content">
+                    <h1>🛰️ NASA Farm Navigator</h1>
+                    <p class="hero-subtitle">Learn sustainable agriculture using real NASA satellite data</p>
+                    <div class="feature-highlights">
+                        <div class="feature">
+                            <span class="feature-icon">🌍</span>
+                            <span>Interactive 3D Globe</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">🏠</span>
+                            <span>Rooftop Farming</span>
+                        </div>
+                        <div class="feature">
+                            <span class="feature-icon">📊</span>
+                            <span>Real NASA Data</span>
+                        </div>
+                    </div>
+                    <button class="btn btn--primary btn--large" onclick="startAdventure()">
+                        🚀 Start Your Farming Adventure
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Globe Selection Screen -->
+    <div id="globeScreen" class="screen hidden">
+        <div class="globe-container">
+            <div class="globe-header">
+                <div class="screen-nav">
+                    <button class="btn btn--outline btn--sm" onclick="goToHome()">
+                        <span>🏠</span> Home
+                    </button>
+                </div>
+                
+                <div class="globe-header-content">
+                    <h2>🌍 Choose Your Farming Location</h2>
+                    <p>Rotate the globe and click on highlighted regions to select your farm</p>
+                    <div class="location-filters">
+                        <button class="filter-btn active" onclick="filterLocations('all')">All Locations</button>
+                        <button class="filter-btn" onclick="filterLocations('bangladesh')">🇧🇩 Bangladesh</button>
+                        <button class="filter-btn" onclick="filterLocations('usa')">🇺🇸 United States</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="globe-section">
+                <div class="globe-viewer" id="globeViewer"></div>
+                
+                <div class="location-info-panel" id="locationInfo">
+                    <div class="location-card">
+                        <h3>Select a Location</h3>
+                        <p>Rotate the globe and click on a highlighted region to learn more about farming in that area.</p>
+                        <div class="available-locations">
+                            <h4>Available Locations:</h4>
+                            <div class="location-list">
+                                <div class="location-item" onclick="selectLocationFromList('dhaka')">
+                                    <span class="flag">🇧🇩</span>
+                                    <div>
+                                        <strong>Dhaka, Bangladesh</strong>
+                                        <small>Urban rooftop farming</small>
+                                    </div>
+                                </div>
+                                <div class="location-item" onclick="selectLocationFromList('chittagong')">
+                                    <span class="flag">🇧🇩</span>
+                                    <div>
+                                        <strong>Chittagong, Bangladesh</strong>
+                                        <small>Coastal agriculture</small>
+                                    </div>
+                                </div>
+                                <div class="location-item" onclick="selectLocationFromList('iowa')">
+                                    <span class="flag">🇺🇸</span>
+                                    <div>
+                                        <strong>Iowa, USA</strong>
+                                        <small>Traditional corn farming</small>
+                                    </div>
+                                </div>
+                                <div class="location-item" onclick="selectLocationFromList('california')">
+                                    <span class="flag">🇺🇸</span>
+                                    <div>
+                                        <strong>California, USA</strong>
+                                        <small>Sustainable agriculture</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Farming Type Selection -->
+    <div id="farmTypeScreen" class="screen hidden">
+        <div class="farm-type-container">
+            <div class="screen-nav">
+                <button class="btn btn--outline btn--sm" onclick="goBackToGlobe()">
+                    <span>←</span> Back to Map
+                </button>
+                <button class="btn btn--outline btn--sm" onclick="goToHome()">
+                    <span>🏠</span> Home
+                </button>
+            </div>
+            
+            <h2>🌱 Choose Your Farming Method</h2>
+            <p>Select the type of farming you want to learn and practice</p>
+            
+            <div class="farming-types">
+                <div class="farm-type-card" onclick="selectFarmType('traditional')">
+                    <div class="farm-type-icon">🚜</div>
+                    <h3>Traditional Farming</h3>
+                    <p>Learn conventional field-based agriculture with NASA satellite guidance</p>
+                    <div class="farm-features">
+                        <span>• Large scale production</span>
+                        <span>• Crop rotation techniques</span>
+                        <span>• Soil management</span>
+                        <span>• Weather monitoring</span>
+                    </div>
+                    <button class="btn btn--outline">Select Traditional</button>
+                </div>
+                
+                <div class="farm-type-card featured" onclick="selectFarmType('rooftop')">
+                    <div class="farm-type-badge">🌟 Featured</div>
+                    <div class="farm-type-icon">🏢</div>
+                    <h3>Rooftop Farming</h3>
+                    <p>Urban agriculture revolution! Grow fresh produce on building rooftops using space technology</p>
+                    <div class="farm-features">
+                        <span>• Space-efficient design</span>
+                        <span>• Hydroponic systems</span>
+                        <span>• Urban sustainability</span>
+                        <span>• Year-round growing</span>
+                    </div>
+                    <button class="btn btn--primary">Select Rooftop</button>
+                </div>
+                
+                <div class="farm-type-card" onclick="selectFarmType('greenhouse')">
+                    <div class="farm-type-icon">🏠</div>
+                    <h3>Greenhouse Farming</h3>
+                    <p>Controlled environment agriculture with precision monitoring</p>
+                    <div class="farm-features">
+                        <span>• Climate control</span>
+                        <span>• Pest management</span>
+                        <span>• Water efficiency</span>
+                        <span>• Premium crops</span>
+                    </div>
+                    <button class="btn btn--outline">Select Greenhouse</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Game Interface -->
+    <div id="gameScreen" class="screen hidden">
+        <!-- Game Header -->
+        <header class="game-header">
+            <div class="header-left">
+                <div class="game-logo">
+                    <span class="logo-icon">🛰️</span>
+                    <div class="logo-text">
+                        <h1>NASA Farm Navigator</h1>
+                        <span class="location-badge" id="currentLocationBadge">🌍 Select Location</span>
+                    </div>
+                </div>
+                <div class="header-navigation">
+                    <button class="btn btn--outline btn--sm" onclick="goBackToFarmType()">
+                        <span>←</span> Back
+                    </button>
+                    <button class="btn btn--outline btn--sm" onclick="goToHome()">
+                        <span>🏠</span> Home
+                    </button>
+                </div>
+            </div>
+            
+            <div class="header-center">
+                <div class="game-stats">
+                                    <div class="stat-card stat-card-day">
+                    <div class="stat-icon">📅</div>
+                    <div class="stat-info">
+                        <span class="stat-label">Day</span>
+                        <span class="stat-value" id="currentDay">1</span>
+                    </div>
+                </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">🌸</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Season</span>
+                            <span class="stat-value" id="currentSeason">Spring</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-info">
+                            <span class="stat-label">Score</span>
+                            <span class="stat-value" id="gameScore">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+
+            <div class="header-right">
+    <div class="sustainability-section">
+        <div class="sustainability-label">🌱 Sustainability</div>
+        <div class="sustainability-meter">
+            <div class="meter-fill" id="sustainabilityFill" style="width: 75%"></div>
+            <span class="meter-text" id="sustainabilityScore">75%</span>
+        </div>
+    </div>
+    
+    <!-- Enhanced Auto-Simulation Toggle -->
+    <div class="auto-sim-section">
+        <div class="auto-sim-header">
+            <span class="sim-icon">🤖</span>
+            <span class="sim-label">Auto Simulation</span>
+        </div>
+        <label class="toggle-switch">
+            <input type="checkbox" id="autoSimToggle" onchange="toggleAutoSimulation()">
+            <span class="toggle-slider"></span>
+        </label>
+        <div class="sim-status" id="simStatus">
+            <span class="status-text">Disabled</span>
+        </div>
+    </div>
+    
+    <!-- REMOVED PAUSE BUTTON -->
+</div>
+
+
+        </header>
+
+        <!-- Main Game Content -->
+        <main class="game-main">
+            <!-- Left Panel - Farm Management -->
+            <section class="farm-panel">
+                <div class="panel-header">
+                    <h2>🚜 Farm Management</h2>
+                    <div class="farm-controls">
+                        <button class="control-btn" data-mode="plant" onclick="setGameMode('plant')">
+                            <span>🌱</span> Plant
+                        </button>
+                        <button class="control-btn" data-mode="water" onclick="setGameMode('water')">
+                            <span>💧</span> Water
+                        </button>
+                        <button class="control-btn" data-mode="fertilize" onclick="setGameMode('fertilize')">
+                            <span>🌿</span> Fertilize
+                        </button>
+                        <button class="control-btn" data-mode="harvest" onclick="setGameMode('harvest')">
+                            <span>🌾</span> Harvest
+                        </button>
+                        <button class="control-btn control-btn--danger" data-mode="destroy" onclick="setGameMode('destroy')">
+                            <span>🗑️</span> Destroy
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Farm Grid -->
+                <div class="farm-container" id="farmContainer">
+                    <!-- Traditional Farm Grid -->
+                    <!-- Traditional Farm Grid -->
+<div class="farm-grid traditional-grid" id="traditionalFarm">
+    <div class="field-plot" data-field="1" onclick="handleFieldClick(1)">
+        <div class="field-content">
+            <div class="field-header-info">
+                <span class="field-number">Field 1</span>
+                <span class="field-area" id="area1">2.5 ha</span>
+            </div>
+            <div class="field-crop-display" id="crop1">Empty Field</div>
+            <div class="field-stats-detailed">
+                <div class="stat-row">
+                    <span class="stat-label">💧 Water Need:</span>
+                    <span class="stat-value" id="waterNeed1">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📐 Planted:</span>
+                    <span class="stat-value" id="plantedArea1">0 ha</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Yield/ha:</span>
+                    <span class="stat-value" id="yieldPerHa1">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Total Expected:</span>
+                    <span class="stat-value" id="totalExpected1">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">💰 Market Price:</span>
+                    <span class="stat-value" id="marketPrice1">-</span>
+                </div>
+                <div class="stat-row highlight-row">
+                    <span class="stat-label">💵 Est. Revenue:</span>
+                    <span class="stat-value" id="estRevenue1">$0</span>
+                </div>
+            </div>
+            <div class="field-stats-simple">
+                <span class="moisture" id="moisture1">💧 50%</span>
+                <span class="health" id="health1">❤️ 50%</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Repeat for fields 2, 3, 4 -->
+    <div class="field-plot" data-field="2" onclick="handleFieldClick(2)">
+        <div class="field-content">
+            <div class="field-header-info">
+                <span class="field-number">Field 2</span>
+                <span class="field-area" id="area2">2.0 ha</span>
+            </div>
+            <div class="field-crop-display" id="crop2">Empty Field</div>
+            <div class="field-stats-detailed">
+                <div class="stat-row">
+                    <span class="stat-label">💧 Water Need:</span>
+                    <span class="stat-value" id="waterNeed2">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📐 Planted:</span>
+                    <span class="stat-value" id="plantedArea2">0 ha</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Yield/ha:</span>
+                    <span class="stat-value" id="yieldPerHa2">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Total Expected:</span>
+                    <span class="stat-value" id="totalExpected2">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">💰 Market Price:</span>
+                    <span class="stat-value" id="marketPrice2">-</span>
+                </div>
+                <div class="stat-row highlight-row">
+                    <span class="stat-label">💵 Est. Revenue:</span>
+                    <span class="stat-value" id="estRevenue2">$0</span>
+                </div>
+            </div>
+            <div class="field-stats-simple">
+                <span class="moisture" id="moisture2">💧 45%</span>
+                <span class="health" id="health2">❤️ 45%</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="field-plot" data-field="3" onclick="handleFieldClick(3)">
+        <div class="field-content">
+            <div class="field-header-info">
+                <span class="field-number">Field 3</span>
+                <span class="field-area" id="area3">3.0 ha</span>
+            </div>
+            <div class="field-crop-display" id="crop3">Empty Field</div>
+            <div class="field-stats-detailed">
+                <div class="stat-row">
+                    <span class="stat-label">💧 Water Need:</span>
+                    <span class="stat-value" id="waterNeed3">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📐 Planted:</span>
+                    <span class="stat-value" id="plantedArea3">0 ha</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Yield/ha:</span>
+                    <span class="stat-value" id="yieldPerHa3">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Total Expected:</span>
+                    <span class="stat-value" id="totalExpected3">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">💰 Market Price:</span>
+                    <span class="stat-value" id="marketPrice3">-</span>
+                </div>
+                <div class="stat-row highlight-row">
+                    <span class="stat-label">💵 Est. Revenue:</span>
+                    <span class="stat-value" id="estRevenue3">$0</span>
+                </div>
+            </div>
+            <div class="field-stats-simple">
+                <span class="moisture" id="moisture3">💧 60%</span>
+                <span class="health" id="health3">❤️ 60%</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="field-plot" data-field="4" onclick="handleFieldClick(4)">
+        <div class="field-content">
+            <div class="field-header-info">
+                <span class="field-number">Field 4</span>
+                <span class="field-area" id="area4">2.5 ha</span>
+            </div>
+            <div class="field-crop-display" id="crop4">Empty Field</div>
+            <div class="field-stats-detailed">
+                <div class="stat-row">
+                    <span class="stat-label">💧 Water Need:</span>
+                    <span class="stat-value" id="waterNeed4">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">📐 Planted:</span>
+                    <span class="stat-value" id="plantedArea4">0 ha</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Yield/ha:</span>
+                    <span class="stat-value" id="yieldPerHa4">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">🌾 Total Expected:</span>
+                    <span class="stat-value" id="totalExpected4">-</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">💰 Market Price:</span>
+                    <span class="stat-value" id="marketPrice4">-</span>
+                </div>
+                <div class="stat-row highlight-row">
+                    <span class="stat-label">💵 Est. Revenue:</span>
+                    <span class="stat-value" id="estRevenue4">$0</span>
+                </div>
+            </div>
+            <div class="field-stats-simple">
+                <span class="moisture" id="moisture4">💧 40%</span>
+                <span class="health" id="health4">❤️ 40%</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+                    <!-- Rooftop Farm Grid -->
+                    <div class="farm-grid rooftop-grid hidden" id="rooftopFarm">
+                        <div class="rooftop-container">
+                            <div class="rooftop-header">
+                                <h3>🏢 Urban Rooftop Farm</h3>
+                                <p>Hydroponic vertical farming system</p>
+                            </div>
+                            
+                            <div class="rooftop-building">
+                                <div class="building-roof">
+                                    <div class="solar-panels">
+                                        <div class="solar-panel">☀️ Solar</div>
+                                        <div class="solar-panel">☀️ Solar</div>
+                                    </div>
+                                    
+                                    <div class="hydroponic-beds">
+                                        <div class="hydroponic-bed" data-field="r1" onclick="handleFieldClick('r1')">
+                                            <div class="bed-label">Bed A - NFT System</div>
+                                            <div class="crop-container" id="rooftop-crop1">
+                                                <span class="crop-icon">🌱</span>
+                                                <span class="crop-name">Empty</span>
+                                            </div>
+                                            <div class="bed-stats">
+                                                <span class="stat" id="rooftop-water1">💧 80%</span>
+                                                <span class="stat" id="rooftop-nutrient1">🧪 75%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="hydroponic-bed" data-field="r2" onclick="handleFieldClick('r2')">
+                                            <div class="bed-label">Bed B - DWC System</div>
+                                            <div class="crop-container" id="rooftop-crop2">
+                                                <span class="crop-icon">🌱</span>
+                                                <span class="crop-name">Empty</span>
+                                            </div>
+                                            <div class="bed-stats">
+                                                <span class="stat" id="rooftop-water2">💧 75%</span>
+                                                <span class="stat" id="rooftop-nutrient2">🧪 80%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="hydroponic-bed" data-field="r3" onclick="handleFieldClick('r3')">
+                                            <div class="bed-label">Bed C - Ebb & Flow</div>
+                                            <div class="crop-container" id="rooftop-crop3">
+                                                <span class="crop-icon">🌱</span>
+                                                <span class="crop-name">Empty</span>
+                                            </div>
+                                            <div class="bed-stats">
+                                                <span class="stat" id="rooftop-water3">💧 70%</span>
+                                                <span class="stat" id="rooftop-nutrient3">🧪 70%</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="hydroponic-bed" data-field="r4" onclick="handleFieldClick('r4')">
+                                            <div class="bed-label">Bed D - Aeroponic</div>
+                                            <div class="crop-container" id="rooftop-crop4">
+                                                <span class="crop-icon">🌱</span>
+                                                <span class="crop-name">Empty</span>
+                                            </div>
+                                            <div class="bed-stats">
+                                                <span class="stat" id="rooftop-water4">💧 85%</span>
+                                                <span class="stat" id="rooftop-nutrient4">🧪 85%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="monitoring-station">
+                                        <div class="sensor">🌡️ 24°C</div>
+                                        <div class="sensor">💨 Humidity: 65%</div>
+                                        <div class="sensor">📊 pH: 6.2</div>
+                                        <div class="sensor">🚰 Water Tank: 850L</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Crop Selection Panel -->
+                <div class="crop-selection-panel hidden" id="cropSelectionPanel">
+                    <h3>Select Crop to Plant</h3>
+                    <div class="crop-options" id="cropOptions"></div>
+                    <button class="btn btn--outline btn--sm" onclick="hideCropSelection()">Cancel</button>
+                </div>
+            </section>
+
+            <!-- Right Panel - NASA Data & Learning -->
+            <aside class="data-panel">
+                <!-- NASA Data Dashboard -->
+                <div class="nasa-data-section">
+                    <div class="section-header">
+                        <h2>🛰️ NASA Satellite Data</h2>
+                        <div class="data-status">
+                            <div class="status-indicator active"></div>
+                            <span>Live Data</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Soil Moisture Chart -->
+                    <div class="data-card">
+                        <div class="data-header">
+                            <h3>💧 Soil Moisture (SMAP)</h3>
+                            <span class="data-source">NASA</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="soilMoistureChart"></canvas>
+                        </div>
+                        <div class="data-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">Current Level</span>
+                                <span class="insight-value" id="currentMoisture">48%</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Trend</span>
+                                <span class="insight-value">↗️ Increasing</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Temperature Chart -->
+                    <div class="data-card">
+                        <div class="data-header">
+                            <h3>🌡️ Temperature (MODIS)</h3>
+                            <span class="data-source">NASA</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="temperatureChart"></canvas>
+                        </div>
+                        <div class="data-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">Average</span>
+                                <span class="insight-value" id="avgTemp">26°C</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Status</span>
+                                <span class="insight-value">✅ Optimal</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- NDVI Chart -->
+                    <div class="data-card">
+                        <div class="data-header">
+                            <h3>🌿 Vegetation Index (NDVI)</h3>
+                            <span class="data-source">NASA</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="ndviChart"></canvas>
+                        </div>
+                        <div class="data-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">Current NDVI</span>
+                                <span class="insight-value" id="currentNDVI">0.65</span>
+                            </div>
+                            <div class="insight-recommendation">
+                                📊 Healthy vegetation growth detected
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MODIS Vegetation Health Chart -->
+                    <div class="data-card">
+                        <div class="data-header">
+                            <h3>🌿 MODIS Vegetation Health</h3>
+                            <span class="data-source">NASA</span>
+                        </div>
+                        <div class="chart-container chart-container-large">
+                            <canvas id="vegetationHealthChart"></canvas>
+                        </div>
+                        <div class="data-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">Overall Score</span>
+                                <span class="insight-value" id="vegHealthScore">78%</span>
+                            </div>
+                            <div class="insight-recommendation">
+                                🌱 Vegetation showing strong growth indicators
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- GPM Precipitation Chart -->
+                    <div class="data-card">
+                        <div class="data-header">
+                            <h3>🌧️ GPM Precipitation Data</h3>
+                            <span class="data-source">NASA</span>
+                        </div>
+                        <div class="chart-container chart-container-large">
+                            <canvas id="precipitationChart"></canvas>
+                        </div>
+                        <div class="data-insights">
+                            <div class="insight-item">
+                                <span class="insight-label">Current Month</span>
+                                <span class="insight-value" id="currentRainfall">125 mm</span>
+                            </div>
+                            <div class="insight-item">
+                                <span class="insight-label">Forecast</span>
+                                <span class="insight-value">📈 Above Average</span>
+                            </div>
+                            <div class="insight-recommendation">
+                                💧 Adequate rainfall expected - reduce irrigation
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Learning Hub -->
+                 <!-- Learning Hub -->
+<div class="learning-section">
+    <div class="section-header">
+        <h2>📚 Learning Hub</h2>
+        <div class="learning-progress">
+            <div class="progress-bar">
+                <div class="progress-fill" id="learningProgress" style="width: 0%"></div>
+            </div>
+            <span class="progress-text" id="learningLevel">Level 1</span>
+        </div>
+    </div>
+    
+    <div class="learning-content" id="learningContent">
+        <div class="learning-welcome">
+            <div class="welcome-icon">🎓</div>
+            <h3>Welcome to the Learning Hub!</h3>
+            <p>Complete interactive lessons to master farming techniques and earn rewards.</p>
+            
+            <div class="learning-features">
+                <div class="feature-item">
+                    <span class="feature-icon">📖</span>
+                    <span>Interactive Lessons</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">✅</span>
+                    <span>Knowledge Quizzes</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">⭐</span>
+                    <span>Earn Learning Points</span>
+                </div>
+                <div class="feature-item">
+                    <span class="feature-icon">🏆</span>
+                    <span>Unlock Achievements</span>
+                </div>
+            </div>
+            
+            <div class="lesson-status-message">
+                <p>🌱 Select a farming method to start learning!</p>
+            </div>
+            
+            <button class="btn btn--primary btn--large" onclick="showLessons()" id="startLearningBtn" style="margin-top: 1rem; width: 100%;">
+                🚀 Start Learning
+            </button>
+        </div>
+    </div>
+</div>
+
+            </aside>
+        </main>
+
+        <!-- Game Controls Footer -->
+         <!-- Game Controls Footer -->
+<footer class="game-footer">
+    <div class="footer-stats">
+        <div class="performance-metric">
+            <span class="metric-icon">🌾</span>
+            <div class="metric-info">
+                <span class="metric-label">Total Yield</span>
+                <span class="metric-value" id="totalYield">0 bu</span>
+            </div>
+        </div>
+        <div class="performance-metric">
+            <span class="metric-icon">💧</span>
+            <div class="metric-info">
+                <span class="metric-label">Water Usage</span>
+                <span class="metric-value" id="waterUsage">0 L</span>
+            </div>
+        </div>
+        <div class="performance-metric">
+            <span class="metric-icon">⚡</span>
+            <div class="metric-info">
+                <span class="metric-label">Efficiency</span>
+                <span class="metric-value" id="efficiency">0%</span>
+            </div>
+        </div>
+        <div class="performance-metric">
+            <span class="metric-icon">🌱</span>
+            <div class="metric-info">
+                <span class="metric-label">CO₂ Saved</span>
+                <span class="metric-value" id="co2Saved">0 kg</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="game-actions">
+        <button class="btn btn--outline" onclick="openSettings()">
+            <span>⚙️</span> Settings
+        </button>
+        <button class="btn btn--outline" onclick="generateReport()">
+            <span>📊</span> Report
+        </button>
+        <!-- REMOVED: Manual Next Day button -->
+        <!-- Auto-simulation is now the only way to advance time -->
+    </div>
+</footer>
+
+    </div>
+
+    <!-- Modals -->
+    <div class="modal hidden" id="decisionModal">
+        <div class="modal-backdrop" onclick="hideModal('decisionModal')"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="decisionTitle">Make Your Decision</h2>
+                <button class="modal-close" onclick="hideModal('decisionModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div id="decisionContent"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal hidden" id="reportModal">
+        <div class="modal-backdrop" onclick="hideModal('reportModal')"></div>
+        <div class="modal-content large">
+            <div class="modal-header">
+                <h2>📊 Farm Performance Report</h2>
+                <button class="modal-close" onclick="hideModal('reportModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="report-grid">
+                    <div class="report-card">
+                        <h3>🌾 Production Summary</h3>
+                        <div id="productionReport"></div>
+                    </div>
+                    <div class="report-card">
+                        <h3>🌍 Environmental Impact</h3>
+                        <div id="environmentalReport"></div>
+                    </div>
+                    <div class="report-card">
+                        <h3>📈 NASA Data Usage</h3>
+                        <div id="dataUsageReport"></div>
+                    </div>
+                    <div class="report-card">
+                        <h3>🎯 Learning Progress</h3>
+                        <div id="learningReport"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="js/main.js"></script>
+    <script src="js/globe-renderer.js"></script>
+    <script src="js/nasa-data.js"></script>
+    <script src="js/farm-manager.js"></script>
+    <script src="js/rooftop-farming.js"></script>
+    <script src="js/education-manager.js"></script>
+</body>
+</html>
